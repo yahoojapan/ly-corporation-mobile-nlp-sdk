@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- screen -->
+    <string name="main_screen_title">テキスト解析サンプルアプリ</string>
+    <string name="main_screen_sub_title">開発者向け動作確認ツール</string>
+    <string name="main_screen_copyright">© LY Corporation</string>
+    <!-- component -->
+    <string name="jlp_request_card_method_title">利用するメソッド</string>
+    <string name="jlp_request_card_input_title">入力テキスト</string>
+    <string name="jlp_request_card_analyze_button">解析する</string>
+    <string name="jlp_response_card_title">解析結果 (JSON)</string>
+</resources>
