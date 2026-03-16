@@ -93,10 +93,10 @@ xcDist --> |ビルド元| sdkI
 
 ## サポート環境
 
-| Platform | OS / API          | Toolchain                     |
-| -------- | ----------------- | ----------------------------- |
-| Android  | API Level **24+** | Kotlin **2.1.21**, JDK **17** |
-| iOS      | iOS **16+**       | Xcode **16**, Swift **5 系**  |
+| Platform | Minimum OS           | Target OS             | Toolchain                              |
+| -------- | -------------------- | --------------------- | -------------------------------------- |
+| Android  | API 24 (Android 7.0) | API 36 (Android 16.0) | Kotlin 2.3.10 / JDK 17 / Gradle 8.10.2 |
+| iOS      | iOS 15               | iOS 26.2              | Xcode 26 / Swift 5.10                  |
 
 > **Note**: 上記は検証済みの推奨構成です。その他の組み合わせは動作を保証しません。
 
@@ -127,8 +127,8 @@ $ ./gradlew :mobilenlp-kit:assemble
 
 ```console
 $ ls -L1 mobilenlp-kit/build/outputs/aar/
-mobilenlp-kit/build/outputs/aar/mobilenlp-kit-debug.aar
-mobilenlp-kit/build/outputs/aar/mobilenlp-kit-release.aar
+mobilenlp-kit-debug.aar
+mobilenlp-kit-release.aar
 ```
 
 #### 2. AAR の読み込み
@@ -168,7 +168,7 @@ $ ./gradlew :mobilenlp-kit:dependencies --configuration releaseRuntimeClasspath 
 
 ```console
 +--- io.ktor:ktor-client-okhttp:3.2.1
-+--- org.jetbrains.kotlin:kotlin-stdlib:2.1.21 (*)
++--- org.jetbrains.kotlin:kotlin-stdlib:2.3.10 (*)
 +--- io.ktor:ktor-client-core:3.2.1 (*)
 +--- org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1
 \--- org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (*)
@@ -194,7 +194,7 @@ implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 
 ##### デモアプリ（androidApp）
 
-本リポジトリに含まれる デモアプリ（androidApp）では、mobilenlp-kit モジュールを直接依存関係に含めています。
+本リポジトリに含まれるデモアプリ（androidApp）では、mobilenlp-kit モジュールを直接依存関係に含めています。
 そのため、デモアプリをビルドする際には `.aar` を `libs/` に配置する必要はありません。
 
 ### iOS
@@ -214,17 +214,19 @@ $ ls -L1 mobilenlp-kit/build/XCFrameworks/*/*.xcframework
 mobilenlp-kit/build/XCFrameworks/debug/MobileNLPKitCore.xcframework:
 Info.plist
 ios-arm64
-ios-arm64_x86_64-simulator
+ios-arm64-simulator
 
 mobilenlp-kit/build/XCFrameworks/release/MobileNLPKitCore.xcframework:
 Info.plist
 ios-arm64
-ios-arm64_x86_64-simulator
+ios-arm64-simulator
 ```
 
 #### 2. xcframework の読み込み
 
 > **Note**: iOS 向け SDK 本体は **MobileNLPKit** で、内部で `mobilenlp-kit` の **commonMain** を利用します。
+
+> ⚠️ アプリでの利用には `MobileNLPKitCore` と `MobileNLPKit` の両方が必要です。
 
 ##### 利用者のアプリでの設定
 
@@ -233,7 +235,7 @@ Swift Package Manager（SPM）経由で `MobileNLPKit` を追加してくださ�
 1. Xcode でアプリのプロジェクトを開く
 2. 「PROJECT > Package Dependencies > ＋」 を開く
 3. 「Add Local」を選択してこのリポジトリの `Package.swift` を指定する
-4. 「Frameworks, Libraries, and Embedded Content」に `MobileNLPKit`を追加する
+4. 「Frameworks, Libraries, and Embedded Content」に `MobileNLPKit` を追加する
 
 ##### デモアプリ（iosApp）
 
@@ -302,10 +304,19 @@ appid=your_appid_here  # 発行された APPID をここに記載
 1. `iosApp/JlpTestApp.xcworkspace` を Xcode で開く
 2. ターゲットを `iosApp` に設定し、シミュレータまたは実機で実行
 
+> **Note**: Gradle がサポートする Java バージョンには上限があるため、システムのデフォルト JDK がサポート範囲を超えているとビルドエラーとなることがあります。  
+> その場合はリポジトリルートに `.xcode.env` を作成し、`JAVA_HOME` を固定してください。  
+> このファイルが存在する場合、`MobileNLPKit.xcodeproj` の "Build KMP Framework" Run Script フェーズの実行前に自動で読み込まれます。
+>
+> ```sh
+> export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+> export PATH="$JAVA_HOME/bin:$PATH"
+> ```
+
 ### デモアプリの使い方
 
 1. 利用するメソッド（例：日本語形態素解析）を選択
-2. 「入力テキスト」に自然文を入力 (デフォルトでサンプルテキストが入力済み)
+2. 「入力テキスト」に自然文を入力（デフォルトでサンプルテキストが入力済み）
 3. 「解析する」ボタンを押下
 4. JSON 形式の結果が画面下部に表示されることを確認
 

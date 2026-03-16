@@ -2,12 +2,17 @@ package jp.co.lycorp.jlp.testapp.android.ui.screen
 
 import android.text.TextUtils
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,13 +36,21 @@ import jp.co.lycorp.jlp.testapp.android.ui.viewmodel.MainScreenViewModel
 @Composable
 fun MainScreen(
     viewModel: MainScreenViewModel,
+    toSettingsScreen: () -> Unit,
 ) {
-    MainScreen(viewModel.uiState, viewModel::selectMethod, viewModel::onInputTextChanged, viewModel::analyze)
+    MainScreen(
+        uiState = viewModel.uiState,
+        toSettingsScreen = toSettingsScreen,
+        selectMethod = viewModel::selectMethod,
+        onInputTextChange = viewModel::onInputTextChanged,
+        analyze = viewModel::analyze,
+    )
 }
 
 @Composable
 internal fun MainScreen(
     uiState: MainScreenUiState,
+    toSettingsScreen: () -> Unit,
     selectMethod: (index: Int) -> Unit,
     onInputTextChange: (input: String) -> Unit,
     analyze: () -> Unit,
@@ -57,7 +70,20 @@ internal fun MainScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            TitleAndSub(modifier = Modifier.padding(bottom = 16.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+            ) {
+                TitleAndSub(
+                    modifier = Modifier
+                        .align(Alignment.Center),
+                )
+                SettingsIconButton(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    onClick = toSettingsScreen,
+                )
+            }
             JlpRequestCard(
                 methods = uiState.methods.map { method -> method.displayName },
                 methodIndex = uiState.methodIndex,
@@ -102,6 +128,19 @@ private fun TitleAndSub(modifier: Modifier) {
     }
 }
 
+@Composable
+private fun SettingsIconButton(
+    modifier: Modifier,
+    onClick: () -> Unit,
+) {
+    IconButton(modifier = modifier.padding(end = 4.dp), onClick = onClick) {
+        Icon(
+            imageVector = Icons.Default.Settings,
+            contentDescription = "settings",
+        )
+    }
+}
+
 @Preview
 @Composable
 private fun MainScreenPreview() {
@@ -115,6 +154,7 @@ private fun MainScreenPreview() {
                 response = "",
                 responseError = "",
             ),
+            toSettingsScreen = {},
             selectMethod = {},
             onInputTextChange = {},
             analyze = {},
@@ -135,6 +175,7 @@ private fun MainScreenResponsePreview() {
                 response = "result\n".repeat(50),
                 responseError = "",
             ),
+            toSettingsScreen = {},
             selectMethod = {},
             onInputTextChange = {},
             analyze = {},
@@ -155,6 +196,7 @@ private fun MainScreenResponseErrorPreview() {
                 response = "error",
                 responseError = "メソッドの指定が誤っています。",
             ),
+            toSettingsScreen = {},
             selectMethod = {},
             onInputTextChange = {},
             analyze = {},

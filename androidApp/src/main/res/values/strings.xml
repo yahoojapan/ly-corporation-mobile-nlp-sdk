@@ -4,6 +4,10 @@
     <string name="main_screen_title">テキスト解析サンプルアプリ</string>
     <string name="main_screen_sub_title">開発者向け動作確認ツール</string>
     <string name="main_screen_copyright">© LY Corporation</string>
+    <string name="settings_screen_title">設定</string>
+    <string name="settings_screen_app_id">AppId</string>
+    <string name="settings_screen_app_id_example">例: your-app-id</string>
+    <string name="settings_screen_save">保存</string>
     <!-- component -->
     <string name="jlp_request_card_method_title">利用するメソッド</string>
     <string name="jlp_request_card_input_title">入力テキスト</string>
