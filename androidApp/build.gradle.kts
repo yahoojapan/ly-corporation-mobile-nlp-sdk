@@ -4,8 +4,9 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.androidApplication)
-    alias(libs.plugins.kotlinAndroid)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlinAndroid)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 abstract class GenerateSecretTask : DefaultTask() {
@@ -21,7 +22,7 @@ abstract class GenerateSecretTask : DefaultTask() {
     private fun Properties.toConstVals(): String {
         val indent = "|${" ".repeat(4)}"
         return this
-            .map { (k, v) -> "const val ${k.toString().uppercase()}: String = \"${v}\"" }
+            .map { (k, v) -> "const val ${k.toString().uppercase()}: String = \"${(v as? String)?.replace("\"", "") ?: ""}\"" }
             .joinToString(separator = "\n$indent", prefix = indent)
     }
 
@@ -60,11 +61,11 @@ tasks.withType<KotlinCompile>().configureEach {
 
 android {
     namespace = "jp.co.lycorp.jlp.testapp.android"
-    compileSdk = 35
+    compileSdk = 36
     defaultConfig {
         applicationId = "jp.co.lycorp.jlp.testapp.android"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
     }
@@ -101,10 +102,12 @@ dependencies {
     implementation(project(":mobilenlp-kit"))
 
     implementation(platform(libs.compose.bom))
-    implementation(libs.compose.ui)
-    implementation(libs.compose.ui.tooling.preview)
-    debugImplementation(libs.compose.ui.tooling)
-    implementation(libs.compose.material3)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.viewmodel)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.ui)
+    implementation(libs.kotlinx.serialization)
+    debugImplementation(libs.compose.ui.tooling)
+    implementation(libs.compose.ui.tooling.preview)
 }

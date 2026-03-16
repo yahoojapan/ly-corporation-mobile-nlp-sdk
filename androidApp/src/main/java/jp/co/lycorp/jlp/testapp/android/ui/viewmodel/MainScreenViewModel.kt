@@ -8,17 +8,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
-import jp.co.lycorp.jlp.mobilenlp.kit.JlpHandlerType
 import jp.co.lycorp.jlp.mobilenlp.kit.JlpResponseParser
-import jp.co.lycorp.jlp.mobilenlp.kit.MobileJlpHandler
-import jp.co.lycorp.jlp.mobilenlp.kit.MobileJlpHandlerFactory
 import jp.co.lycorp.jlp.mobilenlp.kit.model.JlpMethod
-import jp.co.lycorp.jlp.testapp.AppSecrets
+import jp.co.lycorp.jlp.testapp.android.data.JlpHandlerStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class MainScreenViewModel(private val jlpHandler: MobileJlpHandler, private val parser: JlpResponseParser) : ViewModel() {
+class MainScreenViewModel(private val parser: JlpResponseParser) : ViewModel() {
     companion object {
         val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
@@ -26,7 +23,6 @@ class MainScreenViewModel(private val jlpHandler: MobileJlpHandler, private val 
                 modelClass: Class<T>,
                 extras: CreationExtras,
             ): T = MainScreenViewModel(
-                jlpHandler = MobileJlpHandlerFactory.create(JlpHandlerType.Online(AppSecrets.APPID)),
                 parser = JlpResponseParser(),
             ) as T
         }
@@ -48,7 +44,7 @@ class MainScreenViewModel(private val jlpHandler: MobileJlpHandler, private val 
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            val response = jlpHandler.analyze(method, uiState.input)
+            val response = JlpHandlerStore.jlpHandler.analyze(method, uiState.input)
             val (errorMsg, result) = parser.parseResponse(response)
             withContext(Dispatchers.Main) {
                 uiState = uiState.copy(responseError = errorMsg ?: "", response = result)

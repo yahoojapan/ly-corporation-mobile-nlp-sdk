@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import MobileNLPKit
 
+@MainActor
 class MainViewModel: ObservableObject {
     @Published var inputText: String = ""
     @Published var response: String = ""
@@ -10,12 +11,12 @@ class MainViewModel: ObservableObject {
     @Published var errorMsg: String = ""
     let methodDisplayNames: [String] = JlpMethod.entries.map { method in method.displayName }
 
-    private let jlpHandler: MobileJlpHandler
     private let parser = JlpResponseParser()
+    private let jlpHandlerStore: JlpHandlerStoreProtocol
     private var cancellable = Set<AnyCancellable>()
 
-    init(jlpHandler: MobileJlpHandler) {
-        self.jlpHandler = jlpHandler
+    init(jlpHandlerStore: JlpHandlerStoreProtocol) {
+        self.jlpHandlerStore = jlpHandlerStore
         $selectedMethod
             .handleEvents(receiveOutput: { _ in self.resetView() })
             .map { method in
@@ -56,13 +57,14 @@ class MainViewModel: ObservableObject {
             return
         }
 
-        jlpHandler.analyze(method: method, query: inputText, id: "1234-1") { jlpResponse, _ in
+        let handler = jlpHandlerStore.getHandler()
+        handler.analyze(method: method, query: inputText, id: "1234-1") { jlpResponse, _ in
             guard let response = jlpResponse else {
                 return
             }
             let result = self.parser.parseResponse(response: response)
 
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 self.errorMsg = (result.first ?? "") as String
                 self.response = (result.second ?? "") as String
             }

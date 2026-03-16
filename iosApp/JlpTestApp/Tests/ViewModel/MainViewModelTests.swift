@@ -20,13 +20,24 @@ class SpyMobileJlpHandler: MobileJlpHandler {
     }
 }
 
+class SpyJlpHandlerStore: JlpHandlerStoreProtocol {
+    var jlpHandler: SpyMobileJlpHandler = .init()
+
+    func getHandler() -> any MobileNLPKit.MobileJlpHandler {
+        return jlpHandler
+    }
+
+    func updateAppId() {}
+}
+
+@MainActor
 final class MainViewModelTests: XCTestCase {
-    private var jlpHandler: SpyMobileJlpHandler!
+    private var store: SpyJlpHandlerStore!
     private var subject: MainViewModel!
 
     override func setUp() {
-        jlpHandler = SpyMobileJlpHandler()
-        subject = MainViewModel(jlpHandler: jlpHandler)
+        store = SpyJlpHandlerStore()
+        subject = MainViewModel(jlpHandlerStore: store)
     }
 
     func test_指定したメソッドと入力文字列をリクエストする() {
@@ -38,8 +49,8 @@ final class MainViewModelTests: XCTestCase {
         subject.execute()
 
         // verify
-        XCTAssertEqual(JlpMethod.entries[1], jlpHandler.method)
-        XCTAssertEqual("inputText", jlpHandler.query)
+        XCTAssertEqual(JlpMethod.entries[1], store.jlpHandler.method)
+        XCTAssertEqual("inputText", store.jlpHandler.query)
     }
 
     func test_入力文字列が空文字の場合_サンプル文字列をリクエストする() {
@@ -52,7 +63,7 @@ final class MainViewModelTests: XCTestCase {
         subject.execute()
 
         // verify
-        XCTAssertEqual(targetMethod.sample, jlpHandler.query)
+        XCTAssertEqual(targetMethod.sample, store.jlpHandler.query)
     }
 
     func test_リクエストの成功時にApiのレスポンスを表示する() {
@@ -63,7 +74,7 @@ final class MainViewModelTests: XCTestCase {
           "key": "value"
         }
         """
-        jlpHandler.jlpResponse = JlpResponseSuccess(jsonResponse: "{\"key\":\"value\"}")
+        store.jlpHandler.jlpResponse = JlpResponseSuccess(jsonResponse: "{\"key\":\"value\"}")
 
         // exec
         subject.execute()
@@ -87,7 +98,7 @@ final class MainViewModelTests: XCTestCase {
           "description": "Internal Error"
         }
         """
-        jlpHandler.jlpResponse = JlpResponseHttpError(status: 500, description: "Internal Error")
+        store.jlpHandler.jlpResponse = JlpResponseHttpError(status: 500, description: "Internal Error")
 
         // exec
         subject.execute()

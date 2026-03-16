@@ -11,7 +11,7 @@ guard let content = try? String(contentsOfFile: inputPath, encoding: .utf8) else
 
 func dumpEnv(_ envs: [String: String]) -> String {
     envs.map { key, value in
-        "static let \(key) = \"\(value)\""
+        "static let \(key) = \"\(value.replacingOccurrences(of: "\"", with: ""))\""
     }.joined(separator: "\n    ")
 }
 

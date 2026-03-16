@@ -20,14 +20,20 @@ kotlin {
     }
 
     val xcf = XCFramework("MobileNLPKitCore")
+    val minIosVersion = "15.0"
     listOf(
-        iosX64(),
         iosArm64(),
         iosSimulatorArm64(),
     ).forEach {
         it.binaries.framework {
             baseName = "MobileNLPKitCore"
             isStatic = true
+            freeCompilerArgs += listOf(
+                "-Xoverride-konan-properties=" +
+                "osVersionMin.ios_arm64=$minIosVersion;" +
+                "osVersionMin.ios_simulator_arm64=$minIosVersion"
+            )
+
             xcf.add(this)
         }
     }
@@ -49,7 +55,7 @@ kotlin {
 
 android {
     namespace = "jp.co.lycorp.jlp.mobilenlp.kit"
-    compileSdk = 35
+    compileSdk = 36
     defaultConfig {
         minSdk = 24
     }

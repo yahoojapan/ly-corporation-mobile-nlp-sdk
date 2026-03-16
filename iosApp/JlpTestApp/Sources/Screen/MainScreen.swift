@@ -2,15 +2,26 @@ import MobileNLPKit
 import SwiftUI
 
 struct MainScreen: View {
-    @StateObject var viewModel = MainViewModel(
-        jlpHandler: MobileJlpHandlerFactory.create(JlpHandlerType.online(appid: AppSecrets.APPID))
-    )
+    let onClickSettings: () -> Void
+
+    @StateObject var viewModel = MainViewModel(jlpHandlerStore: JlpHandlerStore.shared)
     @FocusState var isTextFieldFocused: Bool
 
     var body: some View {
         ScrollView {
             VStack(alignment: .center) {
-                TitleAndSubTitle()
+                ZStack(alignment: .trailing) {
+                    TitleAndSubTitle(title: "テキスト解析サンプルアプリ", subTitle: "開発者向け動作確認ツール")
+                        .frame(maxWidth: .infinity)
+
+                    Button(action: onClickSettings) {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 20, weight: .regular))
+                            .foregroundColor(.primary)
+                            .padding(10)
+                            .padding(.trailing, 16)
+                    }
+                }
                 JlpRequestCard(
                     selectedMethod: $viewModel.selectedMethod,
                     inputText: $viewModel.inputText,
@@ -33,17 +44,6 @@ struct MainScreen: View {
     }
 }
 
-private struct TitleAndSubTitle: View {
-    var body: some View {
-        VStack(alignment: .center) {
-            Text("テキスト解析サンプルアプリ").font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color.Theme.onSurface)
-            Text("開発者向け動作確認ツール").font(.system(size: 13))
-                .foregroundStyle(Color.Theme.onSurfaceVariant)
-        }.padding(.bottom, 16)
-    }
-}
-
 private struct CopyrightText: View {
     var body: some View {
         Text("© LY Corporation")
@@ -54,5 +54,5 @@ private struct CopyrightText: View {
 }
 
 #Preview {
-    MainScreen()
+    MainScreen(onClickSettings: {})
 }
