@@ -4,8 +4,5 @@
 @_exported import MobileNLPKitCore
 
 public protocol MobileJlpHandler {
-    func analyze(method: JlpMethod,
-                 query: String,
-                 id: String,
-                 completionHandler: @escaping ((any JlpResponse)?, (any Error)?) -> Void)
+    func analyze(method: JlpMethod, query: String, id: String) async -> (any JlpResponse)
 }

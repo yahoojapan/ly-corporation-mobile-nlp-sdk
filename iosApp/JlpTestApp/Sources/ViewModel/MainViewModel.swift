@@ -14,18 +14,26 @@ class MainViewModel: ObservableObject {
     private let parser = JlpResponseParser()
     private let jlpHandlerStore: JlpHandlerStoreProtocol
     private var cancellable = Set<AnyCancellable>()
+    private var requestTask: Task<Void, Never>?
+    private var latestRequestID: UUID?
 
     init(jlpHandlerStore: JlpHandlerStoreProtocol) {
         self.jlpHandlerStore = jlpHandlerStore
         $selectedMethod
-            .handleEvents(receiveOutput: { _ in self.resetView() })
-            .map { method in
-                JlpMethod
-                    .entries
-                    .first { entry in entry.displayName == method }?.sample ?? ""
+            .sink { [weak self] method in
+                guard let self else {
+                    return
+                }
+
+                self.resetView()
+                self.sampleText = JlpMethod.entries
+                    .first { $0.displayName == method }?.sample ?? ""
             }
-            .assign(to: \.sampleText, on: self)
             .store(in: &cancellable)
+    }
+
+    deinit {
+        requestTask?.cancel()
     }
 
     private func resetView() {
@@ -57,17 +65,21 @@ class MainViewModel: ObservableObject {
             return
         }
 
+        let requestID = UUID()
         let handler = jlpHandlerStore.getHandler()
-        handler.analyze(method: method, query: inputText, id: "1234-1") { jlpResponse, _ in
-            guard let response = jlpResponse else {
+        let query = inputText
+        latestRequestID = requestID
+
+        requestTask?.cancel()
+        requestTask = Task(priority: .utility) { [weak self] in
+            let response = await handler.analyze(method: method, query: query, id: "1234-1")
+            guard let self, latestRequestID == requestID else {
                 return
             }
             let result = self.parser.parseResponse(response: response)
 
-            Task { @MainActor in
-                self.errorMsg = (result.first ?? "") as String
-                self.response = (result.second ?? "") as String
-            }
+            self.errorMsg = (result.first ?? "") as String
+            self.response = (result.second ?? "") as String
         }
     }
 

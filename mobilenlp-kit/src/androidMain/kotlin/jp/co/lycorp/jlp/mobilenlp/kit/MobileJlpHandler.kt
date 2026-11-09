@@ -4,7 +4,7 @@
 package jp.co.lycorp.jlp.mobilenlp.kit
 
 import jp.co.lycorp.jlp.mobilenlp.kit.model.JlpMethod
-import jp.co.lycorp.jlp.mobilenlp.kit.network.model.JlpResponse
+import jp.co.lycorp.jlp.mobilenlp.kit.model.JlpResponse
 
 interface MobileJlpHandler {
     suspend fun analyze(jlpMethod: JlpMethod, query: String, id: String = "1234-1"): JlpResponse

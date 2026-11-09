@@ -257,7 +257,7 @@ viewModelScope.launch(Dispatchers.IO) {
     val handler = MobileJlpHandlerFactory.create(JlpHandlerType.Online("<APPID>"))
 
     // 2) 解析（suspend）
-    val response = handler.analyze(JlpMethod.MA, "美しい水車小屋の娘", id = "1234")
+    val response = handler.analyze(JlpMethod.MA, "美しい水車小屋の娘", id = "1234-1")
 
     // 3) 出力
     println(response)
@@ -272,13 +272,30 @@ import MobileNLPKit
 // 1) ハンドラ作成
 let handler = MobileJlpHandlerFactory.create(JlpHandlerType.online(appid: "<APPID>"))
 
-// 2) 解析（completion）
-handler.analyze(method: .ma, query: "美しい水車小屋の娘", id: "1234") { jlpResponse, _ in
-    // 3) 出力
+// 2) 解析（async）
+let response = await handler.analyze(method: .ma, query: "美しい水車小屋の娘", id: "1234-1")
+
+// 3) 出力
+print(response)
+```
+
+### バージョン差異
+
+⚠️ **iOS API の非同期化（v1.2.0 以降）**
+
+iOS の `analyze` は、v1.2.0 以降 `async` 関数になりました。呼び出し時には `await` が必要です。また、呼び出し元は `async` 関数または `Task` 内で実行してください。
+
+```swift
+// v1.1.0 以前
+handler.analyze(method: .ma, query: "美しい水車小屋の娘", id: "1234-1") { jlpResponse, _ in
     if let response = jlpResponse {
         print(response)
     }
 }
+
+// v1.2.0 以降
+let response = await handler.analyze(method: .ma, query: "美しい水車小屋の娘", id: "1234-1")
+print(response)
 ```
 
 ## デモアプリの利用
