@@ -22,8 +22,8 @@ let package = Package(
         .binaryTarget(
             name: "MobileNLPKitCore",
             url:
-            "https://github.com/yahoojapan/ly-corporation-mobile-nlp-sdk/releases/download/1.0.0/MobileNLPKitCore.xcframework.zip",
-            checksum: "79523fe37b789996ec16bab17a438e5da93113d42676d6b3641041508fcbc21e"
+            "https://github.com/yahoojapan/ly-corporation-mobile-nlp-sdk/releases/download/1.2.0/MobileNLPKitCore.xcframework.zip",
+            checksum: "d5a990860cfbb4f9b757026e1132e0ce82015d14676615c9981750323786b079"
         ),
     ]
 )
