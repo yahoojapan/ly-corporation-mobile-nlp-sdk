@@ -13,36 +13,77 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.appendPathSegments
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import jp.co.lycorp.jlp.mobilenlp.kit.JlpJsonMapper
 import jp.co.lycorp.jlp.mobilenlp.kit.model.JlpMethod
-import jp.co.lycorp.jlp.mobilenlp.kit.network.model.JlpRequest
-import jp.co.lycorp.jlp.mobilenlp.kit.network.model.JlpRequestParams
-import jp.co.lycorp.jlp.mobilenlp.kit.network.model.JlpResponse
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
+import jp.co.lycorp.jlp.mobilenlp.kit.model.JlpResponse
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlin.concurrent.atomics.AtomicBoolean
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
-class JlpApiClient(private val client: HttpClient, private val appid: String) {
+@OptIn(ExperimentalAtomicApi::class)
+class JlpApiRequestExecutor(
+    private val scope: CoroutineScope,
+    private val exec: suspend (jlpMethod: JlpMethod, query: String, id: String) -> JlpResponse,
+) {
+    private val isCompleted = AtomicBoolean(false)
+
+    fun request(
+        jlpMethod: JlpMethod,
+        query: String,
+        id: String,
+        onResponse: (JlpResponse) -> Unit,
+        onCancel: () -> Unit,
+    ) {
+        scope.launch {
+            val response = exec(jlpMethod, query, id)
+            complete { onResponse(response) }
+        }.invokeOnCompletion { cause ->
+            if (cause is CancellationException) {
+                complete(onCancel)
+            }
+        }
+    }
+
+    private fun complete(callback: () -> Unit) {
+        if (isCompleted.compareAndSet(expectedValue = false, newValue = true)) {
+            callback()
+        }
+    }
+
+    fun cancel() {
+        scope.cancel()
+    }
+}
+
+class JlpApiClient(private val client: HttpClient, private val mapper: JlpJsonMapper, private val appid: String) {
     companion object {
         private const val URL = "https://jlp.yahooapis.jp/"
     }
 
-    constructor(appid: String) : this(HttpClient(), appid)
+    constructor(appid: String) : this(HttpClient(), JlpJsonMapper(), appid)
 
-    private inline fun <reified T> T.toJson(): String = Json.encodeToString(this)
+    fun createExecutor(): JlpApiRequestExecutor = JlpApiRequestExecutor(scope = CoroutineScope(Dispatchers.IO), exec = ::request)
 
     suspend fun request(
         jlpMethod: JlpMethod,
         query: String,
         id: String,
-    ): JlpResponse = kotlin
-        .runCatching {
-            requestInner(id = id, jlpMethod = jlpMethod, query = query)
-        }.getOrElse {
-            JlpResponse.Error(errorMsg = it.message)
+    ): JlpResponse = kotlin.runCatching {
+        requestInner(id = id, jlpMethod = jlpMethod, query = query)
+    }.getOrElse {
+        if (it is CancellationException) {
+            throw it
         }
+        JlpResponse.Error(errorMsg = it.message)
+    }
 
     private suspend fun requestInner(id: String, jlpMethod: JlpMethod, query: String): JlpResponse {
-        val requestBody = JlpRequest(id = id, method = jlpMethod.methodName, params = JlpRequestParams(q = query)).toJson()
+        val requestBody = mapper.toRequest(id = id, methodName = jlpMethod.methodName, query = query)
 
         val response = client.post(URL) {
             contentType(ContentType.Application.Json)
@@ -56,22 +97,9 @@ class JlpApiClient(private val client: HttpClient, private val appid: String) {
         }
 
         return if (response.status.isSuccess()) {
-            parseResponse(response.bodyAsText())
+            mapper.fromResponse(response.bodyAsText())
         } else {
             JlpResponse.HttpError(status = response.status.value, description = response.status.description)
         }
     }
-
-    private fun parseResponse(jsonString: String): JlpResponse {
-        val element = Json.parseToJsonElement(jsonString)
-        val response = if (isErrorResponse(element)) {
-            JlpResponse::Failed
-        } else {
-            JlpResponse::Success
-        }
-
-        return response(jsonString)
-    }
-
-    private fun isErrorResponse(element: JsonElement) = element !is JsonObject || element.containsKey("error")
 }

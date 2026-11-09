@@ -3,7 +3,7 @@
 
 package jp.co.lycorp.jlp.mobilenlp.kit
 
-import jp.co.lycorp.jlp.mobilenlp.kit.network.model.JlpResponse
+import jp.co.lycorp.jlp.mobilenlp.kit.model.JlpResponse
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 

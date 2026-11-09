@@ -1,22 +1,17 @@
+import Combine
 @testable import JlpTestApp
 import MobileNLPKit
 import XCTest
 
 class SpyMobileJlpHandler: MobileJlpHandler {
     var jlpResponse: JlpResponse = JlpResponseSuccess(jsonResponse: "{\"key\":\"value\"}")
-    var error: Error?
     var method: JlpMethod?
     var query: String = ""
 
-    func analyze(
-        method: JlpMethod,
-        query: String,
-        id _: String,
-        completionHandler: @escaping ((any JlpResponse)?, (any Error)?) -> Void
-    ) {
+    func analyze(method: JlpMethod, query: String, id _: String) async -> (any JlpResponse) {
         self.method = method
         self.query = query
-        completionHandler(jlpResponse, error)
+        return jlpResponse
     }
 }
 
@@ -34,10 +29,25 @@ class SpyJlpHandlerStore: JlpHandlerStoreProtocol {
 final class MainViewModelTests: XCTestCase {
     private var store: SpyJlpHandlerStore!
     private var subject: MainViewModel!
+    private var subscriptions = Set<AnyCancellable>()
 
     override func setUp() {
         store = SpyJlpHandlerStore()
         subject = MainViewModel(jlpHandlerStore: store)
+    }
+
+    override func tearDown() {
+        subscriptions.removeAll()
+    }
+
+    private func waitForResponseChange(_ exec: () -> Void) {
+        let exp = expectation(description: "wait for response change")
+        subject.$response.dropFirst()
+            .sink { _ in exp.fulfill() }
+            .store(in: &subscriptions)
+        exec()
+
+        wait(for: [exp], timeout: 1.0)
     }
 
     func test_指定したメソッドと入力文字列をリクエストする() {
@@ -46,7 +56,9 @@ final class MainViewModelTests: XCTestCase {
         subject.inputText = "inputText"
 
         // exec
-        subject.execute()
+        waitForResponseChange {
+            subject.execute()
+        }
 
         // verify
         XCTAssertEqual(JlpMethod.entries[1], store.jlpHandler.method)
@@ -60,7 +72,9 @@ final class MainViewModelTests: XCTestCase {
         subject.inputText = ""
 
         // exec
-        subject.execute()
+        waitForResponseChange {
+            subject.execute()
+        }
 
         // verify
         XCTAssertEqual(targetMethod.sample, store.jlpHandler.query)
@@ -68,7 +82,6 @@ final class MainViewModelTests: XCTestCase {
 
     func test_リクエストの成功時にApiのレスポンスを表示する() {
         // setup
-        let expectation = self.expectation(description: "wait for main queue")
         let expected = """
         {
           "key": "value"
@@ -77,12 +90,9 @@ final class MainViewModelTests: XCTestCase {
         store.jlpHandler.jlpResponse = JlpResponseSuccess(jsonResponse: "{\"key\":\"value\"}")
 
         // exec
-        subject.execute()
-        DispatchQueue.main.async {
-            expectation.fulfill()
+        waitForResponseChange {
+            subject.execute()
         }
-
-        wait(for: [expectation], timeout: 1)
 
         // verify
         XCTAssertEqual("", subject.errorMsg)
@@ -91,7 +101,6 @@ final class MainViewModelTests: XCTestCase {
 
     func test_リクエストの失敗時にエラーメッセージとエラー内容を表示する() {
         // setup
-        let expectation = self.expectation(description: "wait for main queue")
         let expected = """
         {
           "status": 500,
@@ -101,12 +110,9 @@ final class MainViewModelTests: XCTestCase {
         store.jlpHandler.jlpResponse = JlpResponseHttpError(status: 500, description: "Internal Error")
 
         // exec
-        subject.execute()
-        DispatchQueue.main.async {
-            expectation.fulfill()
+        waitForResponseChange {
+            subject.execute()
         }
-
-        wait(for: [expectation], timeout: 1)
 
         // verify
         XCTAssertEqual("リクエスト処理中にエラーが発生しました。", subject.errorMsg)

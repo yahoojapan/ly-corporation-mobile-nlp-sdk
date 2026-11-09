@@ -11,7 +11,7 @@ public class MobileJlpHandlerFactory {
     public static func create(_ type: JlpHandlerType) -> MobileJlpHandler {
         switch type {
         case let .online(appid):
-            return OnlineMobileJlpHandler(client: JlpApiClient(appid: appid))
+            return OnlineMobileJlpHandler(requestFactory: JlpApiClient(appid: appid))
         }
     }
 }
